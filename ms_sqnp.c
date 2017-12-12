@@ -285,12 +285,12 @@ int u32_rb_cmp(struct mpz_rb_e *a, struct mpz_rb_e *b)
 }
 RB_GENERATE(u32_rb, mpz_rb_e, entries, u32_rb_cmp); 
 
-TAILQ_HEAD(u32_list, u32l_s);
-struct u32l_s
+TAILQ_HEAD(u32_list, mpz_l_e);
+struct mpz_l_e
 {
     uint64_t key;
     mpz_t val;
-    TAILQ_ENTRY(u32l_s) entries;
+    TAILQ_ENTRY(mpz_l_e) entries;
 };
 
 void print_poly(struct u32_rb *p)
@@ -425,6 +425,9 @@ void enumerate(struct object_list *olh)
                         RB_INSERT(u32_rb, poly1_ptr, p1);
                     }
                 }
+
+                mpz_clear(v);
+                mpz_clear(v1);
             }
 
             /* Swap poly0 and poly1. */
@@ -436,6 +439,7 @@ void enumerate(struct object_list *olh)
             {
                 d1 = RB_NEXT(u32_rb, poly0_ptr, d0);
                 RB_REMOVE(u32_rb, poly0_ptr, d0);
+                mpz_clear(d0->val);
                 free(d0);
             }
             temp = poly0_ptr;
@@ -469,22 +473,25 @@ void enumerate(struct object_list *olh)
                 }
                 else
                 {
-                    struct u32l_s *av;
+                    struct mpz_l_e *av;
                     av = malloc(sizeof(*av));
                     assert(av);
                     av->key = exp;
                     mpz_init_set(av->val, v);
                     TAILQ_INSERT_HEAD(&a, av, entries);
                 }
+
+                mpz_clear(v);
             }
 
             /* Insert a-list into polynomial */
-            struct u32l_s *av0, *av1;
+            struct mpz_l_e *av0, *av1;
             for (av0 = TAILQ_FIRST(&a);
                  av0 != NULL;
                  av0 = av1)
             {
                 av1 = TAILQ_NEXT(av0, entries);
+                TAILQ_REMOVE(&a, av0, entries);
 
                 struct mpz_rb_e *p1;
                 p1 = malloc(sizeof(*p1));
@@ -492,11 +499,22 @@ void enumerate(struct object_list *olh)
                 p1->key = av0->key;
                 mpz_init_set(p1->val, av0->val);
 
+                mpz_clear(av0->val);
                 free(av0);
 
                 RB_INSERT(u32_rb, poly0_ptr, p1);
             }
         }
+    }
+
+    struct u16_s *u0, *u1;
+    for (u0 = RB_MIN(u16_rb, &idx_map);
+         u0 != NULL;
+         u0 = u1)
+    {
+        u1 = RB_NEXT(u16_rb, &idx_map, u0);
+        RB_REMOVE(u16_rb, &idx_map, u0);
+        free(u0);
     }
 
     struct u8_s *e0 = TAILQ_FIRST(&indices_fifo);
@@ -508,6 +526,17 @@ void enumerate(struct object_list *olh)
     }
 
     print_poly(poly0_ptr);
+
+    struct mpz_rb_e *d0, *d1;
+    for (d0 = RB_MIN(u32_rb, poly0_ptr);
+         d0 != NULL;
+         d0 = d1)
+    {
+        d1 = RB_NEXT(u32_rb, poly0_ptr, d0);
+        RB_REMOVE(u32_rb, poly0_ptr, d0);
+        mpz_clear(d0->val);
+        free(d0);
+    }
 }
 
 int main(int argc, char *argv[])
