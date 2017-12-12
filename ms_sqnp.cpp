@@ -7,7 +7,7 @@
 #include <bsd/sys/tree.h>
 #include <gmpxx.h>
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <iostream>
 
@@ -253,37 +253,7 @@ struct u8_s
     TAILQ_ENTRY(u8_s) entries;
 };
 
-RB_HEAD(mpz_rb, mpz_rb_e);
-struct mpz_rb_e
-{
-    uint64_t key;
-    mpz_t val;
-    RB_ENTRY(mpz_rb_e) entries;
-};
-int mpz_rb_cmp(struct mpz_rb_e *a, struct mpz_rb_e *b)
-{
-    if (a->key < b->key)
-    {
-        return -1;
-    }
-    else if (a->key > b->key)
-    {
-        return 1;
-    }
-
-    return 0;
-}
-RB_GENERATE(mpz_rb, mpz_rb_e, entries, mpz_rb_cmp);
-
-TAILQ_HEAD(mpz_list, mpz_l_e);
-struct mpz_l_e
-{
-    uint64_t key;
-    mpz_t val;
-    TAILQ_ENTRY(mpz_l_e) entries;
-};
-
-void print_poly(std::map<uint64_t, mpz_class> &m)
+void print_poly(std::unordered_map<uint64_t, mpz_class> &m)
 {
     printf("{");
     for (auto const &pi : m)
@@ -308,11 +278,11 @@ void enumerate(struct object_list *olh)
         TAILQ_INSERT_TAIL(&indices_fifo, e, entries);
     }
 
-    std::map<uint16_t, uint16_t> idx_map;
-    std::map<uint64_t, mpz_class> mpz_map0;
+    std::unordered_map<uint16_t, uint16_t> idx_map;
+    std::unordered_map<uint64_t, mpz_class> mpz_map0;
 
     mpz_class i1(1);
-    mpz_map0[0] = i1;
+    mpz_map0.emplace(0, i1);
 
     struct object *oi;
     TAILQ_FOREACH(oi, olh, entries)
@@ -357,19 +327,19 @@ void enumerate(struct object_list *olh)
 
         if (mask_free)
         {
-            std::map<uint64_t, mpz_class> mpz_map1;
+            std::unordered_map<uint64_t, mpz_class> mpz_map1;
+            mpz_map1.reserve(mpz_map0.size()*4);
             for (auto const &pi : mpz_map0)
             {
-                uint64_t exp;
                 uint64_t exp1 = pi.first;
-                mpz_class v, v1(pi.second);
 
                 for (unsigned ii = 0; ii < 2; ii++)
                 {
+                    uint64_t exp;
+
                     if (ii == 0)
                     {
                         exp = exp1;
-                        v = v1;
                     }
                     else
                     {
@@ -385,11 +355,11 @@ void enumerate(struct object_list *olh)
                     auto search = mpz_map1.find(exp);
                     if (search != mpz_map1.end())
                     {
-                        search->second = search->second + v;
+                        search->second = search->second + pi.second;
                     }
                     else
                     {
-                        mpz_map1[exp] = mpz_class(v); 
+                        mpz_map1.emplace(exp, pi.second);
                     }
                 }
             }
