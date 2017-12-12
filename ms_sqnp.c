@@ -382,7 +382,6 @@ void enumerate(struct object_list *olh)
             struct mpz_rb_e *pi;
             RB_FOREACH(pi, mpz_rb, poly0_ptr)
             {
-                /* TODO(CMD): make v a big num. */
                 uint64_t exp;
                 uint64_t exp1 = pi->key;
                 mpz_t v, v1;
