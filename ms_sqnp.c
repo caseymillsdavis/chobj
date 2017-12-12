@@ -256,21 +256,20 @@ struct u16_s
     uint16_t val;
     RB_ENTRY(u16_s) entries;
 };
-//RB_PROTOTYPE(u16_rb, u16_s, entries, u16_rb_cmp); 
 int u16_rb_cmp(struct u16_s *a, struct u16_s *b)
 {
     return (int)a->key - (int)b->key;
 }
 RB_GENERATE(u16_rb, u16_s, entries, u16_rb_cmp); 
 
-RB_HEAD(u32_rb, mpz_rb_e);
+RB_HEAD(mpz_rb, mpz_rb_e);
 struct mpz_rb_e
 {
     uint64_t key;
     mpz_t val;
     RB_ENTRY(mpz_rb_e) entries;
 };
-int u32_rb_cmp(struct mpz_rb_e *a, struct mpz_rb_e *b)
+int mpz_rb_cmp(struct mpz_rb_e *a, struct mpz_rb_e *b)
 {
     if (a->key < b->key)
     {
@@ -283,9 +282,9 @@ int u32_rb_cmp(struct mpz_rb_e *a, struct mpz_rb_e *b)
 
     return 0;
 }
-RB_GENERATE(u32_rb, mpz_rb_e, entries, u32_rb_cmp); 
+RB_GENERATE(mpz_rb, mpz_rb_e, entries, mpz_rb_cmp);
 
-TAILQ_HEAD(u32_list, mpz_l_e);
+TAILQ_HEAD(mpz_list, mpz_l_e);
 struct mpz_l_e
 {
     uint64_t key;
@@ -293,13 +292,13 @@ struct mpz_l_e
     TAILQ_ENTRY(mpz_l_e) entries;
 };
 
-void print_poly(struct u32_rb *p)
+void print_poly(struct mpz_rb *p)
 {
     struct mpz_rb_e *pi;
     printf("{");
-    RB_FOREACH(pi, u32_rb, p)
+    RB_FOREACH(pi, mpz_rb, p)
     {
-        if (pi != RB_MIN(u32_rb, p)) printf(", ");
+        if (pi != RB_MIN(mpz_rb, p)) printf(", ");
         printf("%lu: ", pi->key);
         mpz_out_str(stdout, 10, pi->val);
     }
@@ -310,7 +309,7 @@ void enumerate(struct object_list *olh)
 {
     struct u8_fifo indices_fifo =
         TAILQ_HEAD_INITIALIZER(indices_fifo);
-    for (unsigned i = 0; i < 32; i++)
+    for (unsigned i = 0; i < 64; i++)
     {
         struct u8_s *e;
         e = malloc(sizeof(*e));
@@ -320,10 +319,10 @@ void enumerate(struct object_list *olh)
     }
 
     struct u16_rb idx_map = RB_INITIALIZER(idx_map);
-    struct u32_rb poly0 = RB_INITIALIZER(poly0);
-    struct u32_rb *poly0_ptr = &poly0;
-    struct u32_rb poly1 = RB_INITIALIZER(poly1);
-    struct u32_rb *poly1_ptr = &poly1;
+    struct mpz_rb poly0 = RB_INITIALIZER(poly0);
+    struct mpz_rb *poly0_ptr = &poly0;
+    struct mpz_rb poly1 = RB_INITIALIZER(poly1);
+    struct mpz_rb *poly1_ptr = &poly1;
 
     struct mpz_rb_e *p0;
     p0 = malloc(sizeof(*p0));
@@ -331,7 +330,7 @@ void enumerate(struct object_list *olh)
     p0->key = 0;
     mpz_init_set_ui(p0->val, 1);
 
-    RB_INSERT(u32_rb, poly0_ptr, p0);
+    RB_INSERT(mpz_rb, poly0_ptr, p0);
 
     struct object *oi;
     TAILQ_FOREACH(oi, olh, entries)
@@ -355,7 +354,7 @@ void enumerate(struct object_list *olh)
                 TAILQ_REMOVE(&indices_fifo, e, entries);
                 free(e);
             }
-            assert(j->val < 32);
+            assert(j->val < 64);
             exp2 |= 1 << j->val;
         }
 
@@ -381,7 +380,7 @@ void enumerate(struct object_list *olh)
         if (mask_free)
         {
             struct mpz_rb_e *pi;
-            RB_FOREACH(pi, u32_rb, poly0_ptr)
+            RB_FOREACH(pi, mpz_rb, poly0_ptr)
             {
                 /* TODO(CMD): make v a big num. */
                 uint64_t exp;
@@ -410,7 +409,7 @@ void enumerate(struct object_list *olh)
 
                     struct mpz_rb_e *crb, find;
                     find.key = exp;
-                    crb = RB_FIND(u32_rb, poly1_ptr, &find); 
+                    crb = RB_FIND(mpz_rb, poly1_ptr, &find);
                     if (crb != NULL)
                     {
                         mpz_add(crb->val, crb->val, v);
@@ -422,7 +421,7 @@ void enumerate(struct object_list *olh)
                         assert(p1);
                         p1->key = exp;
                         mpz_init_set(p1->val, v);
-                        RB_INSERT(u32_rb, poly1_ptr, p1);
+                        RB_INSERT(mpz_rb, poly1_ptr, p1);
                     }
                 }
 
@@ -432,13 +431,13 @@ void enumerate(struct object_list *olh)
 
             /* Swap poly0 and poly1. */
             struct mpz_rb_e *d0, *d1;
-            struct u32_rb *temp;
-            for (d0 = RB_MIN(u32_rb, poly0_ptr);
+            struct mpz_rb *temp;
+            for (d0 = RB_MIN(mpz_rb, poly0_ptr);
                  d0 != NULL;
                  d0 = d1)
             {
-                d1 = RB_NEXT(u32_rb, poly0_ptr, d0);
-                RB_REMOVE(u32_rb, poly0_ptr, d0);
+                d1 = RB_NEXT(mpz_rb, poly0_ptr, d0);
+                RB_REMOVE(mpz_rb, poly0_ptr, d0);
                 mpz_clear(d0->val);
                 free(d0);
             }
@@ -448,9 +447,9 @@ void enumerate(struct object_list *olh)
         }
         else
         {
-            struct u32_list a = TAILQ_HEAD_INITIALIZER(a);
+            struct mpz_list a = TAILQ_HEAD_INITIALIZER(a);
             struct mpz_rb_e *pi;
-            RB_FOREACH(pi, u32_rb, poly0_ptr)
+            RB_FOREACH(pi, mpz_rb, poly0_ptr)
             {
                 uint64_t exp;
                 uint64_t exp1 = pi->key;
@@ -466,7 +465,7 @@ void enumerate(struct object_list *olh)
 
                 struct mpz_rb_e *crb, find;
                 find.key = exp;
-                crb = RB_FIND(u32_rb, poly0_ptr, &find); 
+                crb = RB_FIND(mpz_rb, poly0_ptr, &find);
                 if (crb != NULL)
                 {
                     mpz_add(crb->val, crb->val, v);
@@ -502,7 +501,7 @@ void enumerate(struct object_list *olh)
                 mpz_clear(av0->val);
                 free(av0);
 
-                RB_INSERT(u32_rb, poly0_ptr, p1);
+                RB_INSERT(mpz_rb, poly0_ptr, p1);
             }
         }
     }
@@ -528,12 +527,12 @@ void enumerate(struct object_list *olh)
     print_poly(poly0_ptr);
 
     struct mpz_rb_e *d0, *d1;
-    for (d0 = RB_MIN(u32_rb, poly0_ptr);
+    for (d0 = RB_MIN(mpz_rb, poly0_ptr);
          d0 != NULL;
          d0 = d1)
     {
-        d1 = RB_NEXT(u32_rb, poly0_ptr, d0);
-        RB_REMOVE(u32_rb, poly0_ptr, d0);
+        d1 = RB_NEXT(mpz_rb, poly0_ptr, d0);
+        RB_REMOVE(mpz_rb, poly0_ptr, d0);
         mpz_clear(d0->val);
         free(d0);
     }
