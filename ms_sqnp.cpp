@@ -304,7 +304,7 @@ void enumerate(struct object_list *olh)
             }
             val = idx_map[key];
             assert(val < 64);
-            exp2 |= 1 << val;
+            exp2 |= 1ULL << val;
         }
 
         struct int_s *fi;
@@ -317,7 +317,7 @@ void enumerate(struct object_list *olh)
             uint16_t val = idx_map[key];
 
             fi->val = val;
-            mask_free |= 1 << val;
+            mask_free |= 1ULL << val;
 
             e = (u8_s *)malloc(sizeof(*e));
             assert(e);
