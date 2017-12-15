@@ -11,6 +11,14 @@
 #include <vector>
 #include <iostream>
 
+#define BOOST_POOL_NO_MT
+#include <boost/pool/pool_alloc.hpp>
+
+typedef boost::fast_pool_allocator<std::pair<uint64_t, mpz_class>,
+    boost::default_user_allocator_new_delete,
+    boost::details::pool::default_mutex,
+    28657*2, 0> allocator;
+
 #define PRINT_GRAPH     0
 #define PRINT_EDGE_LIST 0
 #define PRINT_OBJECTS   0
@@ -253,7 +261,11 @@ struct u8_s
     TAILQ_ENTRY(u8_s) entries;
 };
 
-void print_poly(std::unordered_map<uint64_t, mpz_class> &m)
+void print_poly(const std::unordered_map<uint64_t,
+                                         mpz_class,
+                                         std::hash<uint64_t>,
+                                         std::equal_to<uint64_t>,
+                                         allocator> &m)
 {
     printf("{");
     for (auto const &pi : m)
@@ -279,7 +291,11 @@ void enumerate(struct object_list *olh)
     }
 
     std::unordered_map<uint16_t, uint16_t> idx_map;
-    std::unordered_map<uint64_t, mpz_class> mpz_map0;
+    std::unordered_map<uint64_t,
+                       mpz_class,
+                       std::hash<uint64_t>,
+                       std::equal_to<uint64_t>,
+                       allocator> mpz_map0;
 
     mpz_class i1(1);
     mpz_map0.emplace(0, i1);
@@ -327,7 +343,11 @@ void enumerate(struct object_list *olh)
 
         if (mask_free)
         {
-            std::unordered_map<uint64_t, mpz_class> mpz_map1;
+            std::unordered_map<uint64_t,
+                               mpz_class,
+                               std::hash<uint64_t>,
+                               std::equal_to<uint64_t>,
+                               allocator> mpz_map1;
             mpz_map1.reserve(mpz_map0.size()*4);
             for (auto const &pi : mpz_map0)
             {
@@ -409,6 +429,9 @@ void enumerate(struct object_list *olh)
     }
 
     print_poly(mpz_map0);
+
+    mpz_map0.clear();
+    boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(std::pair<uint64_t, mpz_class>)>::purge_memory();
 }
 
 int main(int argc, char *argv[])
