@@ -328,6 +328,7 @@ void enumerate(struct object_list *olh)
         if (mask_free)
         {
             std::unordered_map<uint64_t, mpz_class> mpz_map1;
+            mpz_map1.rehash(mpz_map0.bucket_count());
             mpz_map1.reserve(mpz_map0.size()*4);
             for (auto const &pi : mpz_map0)
             {
