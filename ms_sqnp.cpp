@@ -261,6 +261,7 @@ void print_poly(std::unordered_map<uint64_t, mpz_class> &m)
         //if (pi != m.begin()) printf(", ");
         printf("%lu: ", pi.first);
         std::cout << pi.second.get_str();
+        std::cout << " ";
     }
     printf("}\n");
 }
@@ -394,9 +395,9 @@ void enumerate(struct object_list *olh)
                 }
             }
 
-            for (auto const &a : a)
+            for (auto const &ai : a)
             {
-                mpz_map0[a.first] = a.second;
+                mpz_map0[ai.first] = ai.second;
             }
         }
     }
