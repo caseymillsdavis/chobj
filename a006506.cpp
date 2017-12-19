@@ -10,6 +10,20 @@
 
 #include <gmpxx.h>
 
+/* This is C++ implementation of the algorithm described in:
+ *
+ * P. Butera, M. Pernici, Sums of permanental minors using Grassmann algebra,
+ * arXiv preprint arXiv:1406.5337, 2014.
+ *
+ * There is a python implementation provided by the same authors here:
+ * https://github.com/pernici/hobj.
+ *
+ * To compile, do something like:
+ * g++ -Wall -g -std=gnu++17 a006506.cpp -o a006506 -lgmp -O3
+ *
+ * Author e-mail: caseymillsdavis@gmail.com
+ */
+
 typedef std::vector<unsigned> hobj_t;
 typedef std::vector<unsigned> free_list_t;
 typedef std::vector<std::pair<hobj_t, free_list_t> > hobj_list_t;
@@ -185,7 +199,7 @@ int main(int argc, char *argv[])
         N = strtoul(argv[1], NULL, 0);
     }
 
-    if (argc != 2 || N < 2)
+    if (argc != 2 || N == 0)
     {
         std::cout << argv[0] << " <N>" << std::endl;
         exit(0);
